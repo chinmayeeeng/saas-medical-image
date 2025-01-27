@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile # Root Dockerfile for the frontend
+    ports:
+      - "3000:3000" # Maps port 3000 on the host to port 3000 in the container
+    volumes:
+      - ./src:/app/src # Syncs source code for live updates
+      - /app/node_modules # Prevents syncing node_modules for better performance
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Ensures hot reloading works in Docker
+    depends_on:
+      - backend # Ensures backend starts before the frontend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile # Dockerfile for the backend in the backend folder
+    ports:
+      - "5000:5000" # Maps port 5000 on the host to port 5000 in the container
+    volumes:
+      - ./backend:/app # Syncs backend files for live updates
+      - /app/node_modules # Prevents syncing node_modules for better performance
+      - ./backend/uploads:/app/uploads # Syncs uploaded files
+    environment:
+      - NODE_ENV=development
+      - PORT=5000 # Backend server port
+    command: npm start # Starts the backend server
+
+  db:
+    image: mongo:5.0 # MongoDB version 5.0
+    container_name: mongodb
+    ports:
+      - "27017:27017" # Maps port 27017 for MongoDB
+    volumes:
+      - mongodb_data:/data/db # Persists MongoDB data
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin # Default admin username
+      MONGO_INITDB_ROOT_PASSWORD: password # Default admin password
+
+volumes:
+  mongodb_data:
